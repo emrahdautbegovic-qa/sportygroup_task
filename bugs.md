@@ -15,7 +15,7 @@ Actual: Past events are displayed
 
 **Business Impact:** Users may select events whose outcomes may already be known, undermining trust and the integrity of betting.
 
-**Evidence:** ![alt text](past_events.png)
+**Evidence:** ![alt text](screenshots/past_events.png)
 
 ## BUG-002 — Match list does not display kickoff time
 
@@ -29,7 +29,7 @@ Actual: Past events are displayed
 
 **Business Impact:** Users cannot tell when an event starts or reliably determine whether it is still upcoming.
 
-**Evidence:** ![alt text](time_missing.png)
+**Evidence:** ![alt text](screenshots/time_missing.png)
 
 ## BUG-003 — Away team appears on a separate line
 
@@ -43,7 +43,7 @@ Actual: Past events are displayed
 
 **Business Impact:** The unexpected layout makes matchups harder to scan and may cause confusion about the fixture.
 
-**Evidence:** ![alt text](away_team_in_new_line.png)
+**Evidence:** ![alt text](screenshots/away_team_in_new_line.png)
 
 ## BUG-004 — Match date is inconsistently formatted
 
@@ -57,7 +57,7 @@ Actual: Past events are displayed
 
 **Business Impact:** An ambiguous or inconsistent date can make users misjudge when a match takes place.
 
-**Evidence:** ![alt text](inconsistent_date.png)
+**Evidence:** ![alt text](screenshots/inconsistent_date.png)
 
 ## BUG-005 — Bet can be placed on a past event
 
@@ -120,7 +120,7 @@ Actual: Past events are displayed
 
 **Business Impact:** A receipt that misidentifies the fixture may cause users to doubt which event, or which team their bet applies to and complicate support or dispute handling. 
 
-**Evidence:** ![alt text](teams_reversed.png)
+**Evidence:** ![alt text](screenshots/teams_reversed.png)
 
 ## BUG-010 — Bet receipt omits match kickoff date and time
 
@@ -134,4 +134,4 @@ Actual: Past events are displayed
 
 **Business Impact:** Users may have difficulty confirming the exact event associated with a bet, especially when teams play more than once.
 
-**Evidence:** ![alt text](date_time_missing.png)
+**Evidence:** ![alt text](screenshots/date_time_missing.png)
