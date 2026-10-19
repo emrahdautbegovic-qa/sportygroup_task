@@ -1,3 +1,10 @@
+# UI regression tests for page headers, match-list controls and data, and single-bet placement.
+# They catch UI/API mismatches and verify bet confirmation and balance updates.
+# Check if there are past events displayed
+# Check if the balance, odds, matches, match dates match the API response
+# Check happy patch single bet placement flow and verify the bet slip, success receipt, and balance update.
+# Execpt for checking that no past matches are displayed, this is the most critial flow and that is why it is automated
+
 import re
 from datetime import date, datetime
 from decimal import Decimal
