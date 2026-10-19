@@ -8,12 +8,12 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
-from helpers.api_helper import get_matches
+from helpers.api_helper import get_matches, reset_balance
 
 
 BASE_URL = "https://qae-assignment-tau.vercel.app/"
 
-
+# used to redact the user ID from logs and page source in case it contains sensitive information
 def _redact_user_id(text: str, user_id: str | None) -> str:
     if not user_id:
         return text
@@ -41,6 +41,15 @@ def user_id(request: pytest.FixtureRequest) -> str:
             "--user-id is required when using the user_id fixture", pytrace=False
         )
     return value
+
+# reset user balance before the test session starts to ensure 
+# a consistent starting state for all tests. 
+# This is important because the tests may modify the user's balance,
+# and we want to avoid test failures due to unexpected balance values 
+# from previous test runs.
+@pytest.fixture(scope="session", autouse=True)
+def reset_user_balance(user_id: str) -> None:
+    reset_balance(user_id)
 
 
 @pytest.fixture(scope="session")

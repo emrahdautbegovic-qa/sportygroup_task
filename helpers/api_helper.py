@@ -5,7 +5,17 @@ import requests
 
 BASE_API_URL = "https://qae-assignment-tau.vercel.app/api"
 BALANCE_API_URL = f"{BASE_API_URL}/balance"
+RESET_BALANCE_API_URL = f"{BASE_API_URL}/reset-balance"
 MATCHES_API_URL = f"{BASE_API_URL}/matches"
+
+
+def reset_balance(user_id: str) -> None:
+    response = requests.post(
+        RESET_BALANCE_API_URL,
+        headers={"x-user-id": user_id},
+        timeout=30,
+    )
+    response.raise_for_status()
 
 
 def get_balance(user_id: str) -> Decimal:
