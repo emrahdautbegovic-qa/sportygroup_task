@@ -64,6 +64,40 @@ class MatchListPage:
         return self.driver.find_element(By.ID, "odds-filter")
 
     @property
+    def bet_slip_content(self) -> WebElement:
+        return self.driver.find_element(By.CLASS_NAME, "betSlipContent")
+
+    @property
+    def bet_selection_teams(self) -> WebElement:
+        return self.driver.find_element(By.CLASS_NAME, "betSelectionTeams")
+
+    @property
+    def bet_selection_market(self) -> WebElement:
+        return self.driver.find_element(By.CLASS_NAME, "betSelectionMarket")
+
+    @property
+    def bet_selection_odds(self) -> WebElement:
+        return self.driver.find_element(
+            By.CSS_SELECTOR, "div.betSelectionBottom span.betSelectionOdds"
+        )
+
+    @property
+    def bet_slip_stake_input(self) -> WebElement:
+        return self.driver.find_element(By.ID, "bet-slip-stake-input")
+
+    @property
+    def bet_slip_total_stake(self) -> WebElement:
+        return self.driver.find_element(By.ID, "bet-slip-total-stake")
+
+    @property
+    def bet_slip_potential_payout(self) -> WebElement:
+        return self.driver.find_element(By.ID, "bet-slip-potential-payout")
+
+    @property
+    def bet_slip_place_bet_button(self) -> WebElement:
+        return self.driver.find_element(By.ID, "bet-slip-place-bet")
+
+    @property
     def match_list(self) -> WebElement:
         return self.driver.find_element(By.ID, "match-list")
 
@@ -106,6 +140,10 @@ class MatchListPage:
         return [
             odd.text for odd in card.find_elements(By.CSS_SELECTOR, ".oddsButtonValue")
         ]
+
+    def select_match_home_win(self, match_id: str) -> None:
+        card = self.match_cards_by_id[match_id]
+        card.find_element(By.CSS_SELECTOR, ".oddsButtonValue").click()
 
     @property
     def match_meta(self) -> list[WebElement]:

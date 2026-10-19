@@ -1,10 +1,20 @@
+import re
 from datetime import date, datetime
+from decimal import Decimal
 
 import allure
 import pytest
+from selenium.webdriver.support.ui import WebDriverWait
 
 from helpers.api_helper import get_balance
+from modals.bet_success_modal import BetSuccessModal
 from pages.match_list_page import MatchListPage
+
+
+def _decimal_from_text(text: str) -> Decimal:
+    match = re.search(r"-?\d+(?:[.,]\d+)?", text)
+    assert match is not None, f"No numeric value found in {text!r}"
+    return Decimal(match.group().replace(",", "."))
 
 
 @allure.epic("Sports Betting")
@@ -16,6 +26,7 @@ class TestSportsBettingTests:
         cls.match_list_page = MatchListPage(driver)
         cls.match_list_page.open_page(url)
         cls.match_list_page.wait_page_loaded()
+        cls.bet_success_modal = BetSuccessModal(driver)
 
     @allure.title("Sports betting page has the expected browser title")
     @allure.story("Page navigation")
@@ -110,7 +121,7 @@ class TestSportsBettingTests:
     @allure.severity(allure.severity_level.NORMAL)
     @allure.description_html(
         "<p>Compare each card's displayed date with the API kickoff date using "
-        "the abbreviated weekday, zero-padded day, and abbreviated month format. "
+        "the abbreviated weekday, abbreviated month, and zero-padded day format. "
         "Today and tomorrow are excluded because the UI labels them relatively.</p>"
     )
     def test_match_dates_use_api_date_in_consistent_format(self, matches):
@@ -121,7 +132,7 @@ class TestSportsBettingTests:
             # The UI intentionally labels today's and tomorrow's fixtures relatively.
             if (match_date - date.today()).days in (0, 1):
                 continue
-            # Match the UI's abbreviated weekday, zero-padded day, and abbreviated month.
+            # Match the UI's abbreviated weekday, month, and zero-padded day format.
             expected_date = match_date.strftime("%a %d %b")
             displayed_date = self.match_list_page.get_match_date(match["id"])
 
@@ -134,6 +145,84 @@ class TestSportsBettingTests:
         assert not mismatches, "Match date display mismatches:\n" + "\n".join(
             mismatches
         )
+
+    @allure.title("Place a home-win bet on Arsenal vs Man City")
+    @allure.story("Single bet placement")
+    @allure.severity(allure.severity_level.CRITICAL)
+    @allure.description_html(
+        "<p>Place a €10 home-win bet on Arsenal vs Man City, verify the bet slip "
+        "and success receipt, then confirm the account balance was debited.</p>"
+    )
+    def test_place_arsenal_man_city_home_win_bet(self, user_id, matches):
+        page = self.match_list_page
+        driver = page.driver
+        initial_balance = get_balance(user_id)
+        assert initial_balance >= Decimal("10"), (
+            f"Cannot place a €10 bet with balance €{initial_balance:.2f}"
+        )
+        assert page.header_balance.text == f"Balance: €{initial_balance:.2f}"
+
+        match = next(
+            (
+                item
+                for item in matches
+                if item["homeTeam"] == "Arsenal" and item["awayTeam"] == "Man City"
+            ),
+            None,
+        )
+        assert match is not None, "Arsenal vs Man City was not found in the matches API"
+        match_id = match["id"]
+        assert match_id in page.match_ids, (
+            f"Arsenal vs Man City match {match_id!r} is not displayed"
+        )
+        assert Decimal(str(match["odds"]["home"])) == Decimal("2.85")
+
+        with allure.step("Select the Arsenal home-win outcome"):
+            page.select_match_home_win(match_id)
+            WebDriverWait(driver, 10).until(
+                lambda _: page.bet_slip_content.is_displayed()
+            )
+        assert page.bet_selection_teams.text == "Arsenal vs Man City"
+        assert "Home" in page.bet_selection_market.text
+        assert _decimal_from_text(page.bet_selection_odds.text) == Decimal("2.85")
+
+        with allure.step("Enter a €10 stake and verify the bet slip totals"):
+            page.bet_slip_stake_input.clear()
+            page.bet_slip_stake_input.send_keys("10")
+            WebDriverWait(driver, 10).until(
+                lambda _: "10" in page.bet_slip_total_stake.text
+                and "28.5"
+                in page.bet_slip_potential_payout.text.replace(",", ".")
+            )
+        assert _decimal_from_text(page.bet_slip_total_stake.text) == Decimal("10")
+        assert _decimal_from_text(page.bet_slip_potential_payout.text) == Decimal(
+            "28.5"
+        )
+
+        with allure.step("Place the bet and verify the success receipt"):
+            page.bet_slip_place_bet_button.click()
+            modal = BetSuccessModal(driver)
+            WebDriverWait(driver, 10).until(
+                lambda _: modal.success_label.is_displayed()
+            )
+            assert modal.success_label.text == "Bet Placed Successfully!"
+            assert modal.match.text == "Arsenal vs Man City"
+            assert _decimal_from_text(modal.stake.text) == Decimal("10")
+            assert _decimal_from_text(modal.odds.text) == Decimal("2.85")
+            assert _decimal_from_text(modal.payout.text) == Decimal("28.5")
+
+        with allure.step("Close the receipt and verify the balance was debited"):
+            modal.close_button.click()
+            WebDriverWait(driver, 10).until(
+                lambda _: not modal.success_label.is_displayed()
+            )
+            expected_balance = initial_balance - Decimal("10")
+            WebDriverWait(driver, 10).until(
+                lambda _: page.header_balance.text
+                == f"Balance: €{expected_balance:.2f}"
+            )
+            assert get_balance(user_id) == expected_balance
+            assert page.header_balance.text == f"Balance: €{expected_balance:.2f}"
 
     @allure.title("Displayed teams and odds match the API response")
     @allure.story("Match data")
