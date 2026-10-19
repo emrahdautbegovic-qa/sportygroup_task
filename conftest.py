@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any
 from urllib.parse import quote, quote_plus, urlencode
 
@@ -95,6 +96,10 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]):
 def driver():
     options = Options()
     options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+    if os.environ.get("CHROME_HEADLESS", "").lower() in {"1", "true", "yes"}:
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
     browser = webdriver.Chrome(options=options)
     try:
         browser.maximize_window()

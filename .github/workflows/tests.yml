@@ -1,0 +1,75 @@
+name: Chrome tests
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Set up Java for Allure
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install Allure CLI
+        run: npm install --global allure-commandline
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Verify Chrome is available
+        run: google-chrome --version
+
+      - name: Run UI tests
+        id: tests
+        continue-on-error: true
+        env:
+          USER_ID: ${{ secrets['USER-ID'] }}
+          CHROME_HEADLESS: "true"
+        run: |
+          if [[ -z "$USER_ID" ]]; then
+            echo "Repository secret USER-ID must be configured." >&2
+            exit 1
+          fi
+          pytest -v --user-id "$USER_ID"
+
+      - name: Generate single-file Allure report
+        id: report
+        if: always() && steps.tests.outcome != 'cancelled'
+        run: allure generate --single-file allure-results --clean --report-dir allure-report
+
+      - name: Upload Allure report
+        if: always() && steps.report.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-single-file-report
+          path: allure-report/index.html
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail workflow if tests or report generation failed
+        if: always()
+        env:
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          REPORT_OUTCOME: ${{ steps.report.outcome }}
+        run: |
+          if [[ "$TEST_OUTCOME" != "success" || "$REPORT_OUTCOME" != "success" ]]; then
+            echo "Tests or Allure report generation failed." >&2
+            exit 1
+          fi
